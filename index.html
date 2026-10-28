@@ -18,7 +18,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 'Be Vietnam Pro
 header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
 h1{font-size:20px;margin:0;font-weight:700}
 .tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:3px}
-.tabs button{border:0;background:none;color:var(--mut);padding:7px 14px;border-radius:8px;font:inherit;font-weight:500;cursor:pointer}
+.tabs{overflow-x:auto}.tabs button{border:0;background:none;color:var(--mut);padding:7px 11px;white-space:nowrap;border-radius:8px;font:inherit;font-weight:500;cursor:pointer}
 .tabs button.on{background:var(--acc);color:#fff}
 button,input,select,textarea{font:inherit;color:var(--fg)}
 .btn{border:1px solid var(--bd);background:var(--card);padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:500}
@@ -59,10 +59,11 @@ textarea{min-height:80px;resize:vertical}
 .tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
 .tools .btn.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .tools input[type=color]{width:38px;height:34px;padding:2px}
-#cv{width:100%;touch-action:none;border-radius:8px;cursor:crosshair;display:block;background:#000}
+#cv{width:auto;height:auto;max-width:100%;max-height:calc(100vh - 190px);max-height:calc(100dvh - 190px);margin:0 auto;touch-action:none;border-radius:8px;cursor:crosshair;display:block;background:#000}
 .lb img{max-width:100%;max-height:90vh;margin:auto;display:block;border-radius:8px}
 .cap{color:var(--mut);font-size:13px}
-@media(max-width:520px){.f3{grid-template-columns:1fr 1fr}.day{min-height:48px}.day .p{font-size:11px}}
+.todo{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--bd)}.todo:last-child{border:0}.todo input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--win)}.todo .tx{flex:1;word-break:break-word}.todo.dn .tx{text-decoration:line-through;color:var(--mut)}
+@media(max-width:520px){.f3{grid-template-columns:1fr 1fr}.day{min-height:48px}.day .p{font-size:11px}#cv{max-height:calc(100vh - 250px);max-height:calc(100dvh - 250px)}}
 </style>
 </head>
 <body>
@@ -70,7 +71,7 @@ textarea{min-height:80px;resize:vertical}
 <header>
 <h1>Backtest Log</h1>
 <div class="tabs" id="tabs">
-<button data-t="log" class="on">Nhật ký</button><button data-t="stats">Thống kê</button><button data-t="cal">Lịch PnL</button>
+<button data-t="log" class="on">Nhật ký</button><button data-t="stats">Thống kê</button><button data-t="cal">Lịch PnL</button><button data-t="todo">Việc hôm nay</button>
 </div>
 <div style="display:flex;gap:6px;align-items:center">
 <input id="unit" style="width:56px" title="Đơn vị PnL" aria-label="Đơn vị PnL">
@@ -87,15 +88,15 @@ textarea{min-height:80px;resize:vertical}
 </div>
 
 <div class="modal" id="m"><div class="box" id="mb"></div></div>
-<div class="modal" id="edm"><div class="box" style="max-width:980px">
+<div class="modal" id="edm"><div class="box" style="max-width:1400px;padding:12px">
 <div class="tools" id="tl">
-<button class="btn sm on" data-k="arrow">Mũi tên</button><button class="btn sm" data-k="text">Chữ</button><button class="btn sm" data-k="rect">Khung</button><button class="btn sm" data-k="pen">Bút</button>
+<button class="btn sm" data-k="sel">Chọn / Di chuyển</button><button class="btn sm on" data-k="arrow">Mũi tên</button><button class="btn sm" data-k="text">Chữ</button><button class="btn sm" data-k="rect">Khung</button><button class="btn sm" data-k="pen">Bút</button>
 <input type="color" id="col" value="#ff3b30" aria-label="Màu">
-<button class="btn sm" id="undo">Hoàn tác</button><button class="btn sm" id="clr">Xóa hết</button>
+<button class="btn sm" id="del1">Xóa hình đang chọn</button><button class="btn sm" id="undo">Hoàn tác</button><button class="btn sm" id="clr">Xóa hết</button>
 <span style="flex:1"></span><button class="btn sm" id="edx">Hủy</button><button class="btn pri sm" id="edok">Xong</button>
 </div>
 <canvas id="cv"></canvas>
-<div class="cap" style="margin-top:6px">Kéo chuột để vẽ. Với công cụ Chữ, bấm vào vị trí cần ghi.</div>
+<div class="cap" style="margin-top:6px">Kéo chuột để vẽ. Công cụ Chữ: bấm vào vị trí cần ghi rồi gõ, nhấn Enter để chèn. Sau khi vẽ xong, bấm vào hình rồi kéo để di chuyển (phím Delete để xóa hình đang chọn).</div>
 </div></div>
 <div class="modal lb" id="lb"><div style="margin:auto;width:100%"><img id="lbi" alt=""></div></div>
 
@@ -141,7 +142,7 @@ function calc(items){
 /* render */
 function render(){
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
- $('#app').innerHTML=tab==='log'?vLog():tab==='stats'?vStats():vCal();
+ $('#app').innerHTML=tab==='log'?vLog():tab==='stats'?vStats():tab==='todo'?vTodo():vCal();
 }
 function vLog(){
  let it=sorted();if(fDate)it=it.filter(i=>i.date===fDate);
@@ -242,25 +243,83 @@ function sh(x,s){
   x.beginPath();x.moveTo(s.x2,s.y2);x.lineTo(s.x2-h*Math.cos(a-.4),s.y2-h*Math.sin(a-.4));x.lineTo(s.x2-h*Math.cos(a+.4),s.y2-h*Math.sin(a+.4));x.closePath();x.fill()}
  else if(s.t==='text'){x.font='bold '+Math.max(18,cv.width/40)+'px sans-serif';x.textBaseline='top';x.lineWidth=4;x.strokeStyle='rgba(0,0,0,.65)';x.strokeText(s.s,s.x,s.y);x.fillText(s.s,s.x,s.y)}
 }
-function draw(){const x=cv.getContext('2d');x.drawImage(ed.img,0,0,cv.width,cv.height);[...ed.shapes,ed.cur].filter(Boolean).forEach(s=>sh(x,s))}
+function bb(s){
+ if(s.t==='text'){const x=cv.getContext('2d'),f=Math.max(18,cv.width/40);x.font='bold '+f+'px sans-serif';return[s.x,s.y,s.x+x.measureText(s.s).width,s.y+f*1.2]}
+ const xs=s.t==='pen'?s.p.map(q=>q[0]):[s.x,s.x2],ys=s.t==='pen'?s.p.map(q=>q[1]):[s.y,s.y2];
+ return[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];
+}
+function dseg(p,a,b,c,d){const dx=c-a,dy=d-b,l=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((p[0]-a)*dx+(p[1]-b)*dy)/l));return Math.hypot(p[0]-a-t*dx,p[1]-b-t*dy)}
+function hit(p){
+ const tol=12*cv.width/cv.getBoundingClientRect().width;
+ for(let i=ed.shapes.length-1;i>=0;i--){const s=ed.shapes[i];let ok=false;
+  if(s.t==='arrow')ok=dseg(p,s.x,s.y,s.x2,s.y2)<tol;
+  else if(s.t==='pen')ok=s.p.some((q,j)=>j&&dseg(p,s.p[j-1][0],s.p[j-1][1],q[0],q[1])<tol);
+  else{const b=bb(s);ok=p[0]>=b[0]-tol&&p[0]<=b[2]+tol&&p[1]>=b[1]-tol&&p[1]<=b[3]+tol}
+  if(ok)return s}
+ return null;
+}
+function mv(s,o,dx,dy){if(s.t==='pen')s.p=o.p.map(q=>[q[0]+dx,q[1]+dy]);else{s.x=o.x+dx;s.y=o.y+dy;if(s.t!=='text'){s.x2=o.x2+dx;s.y2=o.y2+dy}}}
+function setTool(k){ed.tool=k;document.querySelectorAll('#tl [data-k]').forEach(x=>x.classList.toggle('on',x.dataset.k===k));cv.style.cursor=k==='sel'?'move':'crosshair'}
+function askText(e,p){
+ e.preventDefault();const old=$('#ti');if(old)old.remove();
+ const i=document.createElement('input');i.id='ti';i.placeholder='Nhập chữ, Enter để chèn';
+ i.style.cssText='position:fixed;z-index:99;width:240px;border:2px solid var(--acc);left:'+Math.max(4,Math.min(e.clientX,innerWidth-250))+'px;top:'+Math.max(4,Math.min(e.clientY,innerHeight-50))+'px';
+ let done=0;
+ const ok=()=>{if(done)return;done=1;const s=i.value.trim();i.remove();if(s){const t={t:'text',x:p[0],y:p[1],s,c:$('#col').value};ed.shapes.push(t);setTool('sel');ed.sel=t;draw()}};
+ i.onkeydown=k=>{if(k.key==='Enter')ok();if(k.key==='Escape'){done=1;i.remove()}};
+ i.onblur=ok;$('#edm').appendChild(i);setTimeout(()=>i.focus(),30);
+}
+function draw(){const x=cv.getContext('2d');x.drawImage(ed.img,0,0,cv.width,cv.height);[...ed.shapes,ed.cur].filter(Boolean).forEach(s=>sh(x,s));
+ if(ed.sel){const b=bb(ed.sel),w=Math.max(2,cv.width/500);x.save();x.setLineDash([w*4,w*3]);x.lineWidth=w;x.strokeStyle='#3b82f6';x.strokeRect(b[0]-6,b[1]-6,b[2]-b[0]+12,b[3]-b[1]+12);x.restore()}}
 async function openEd(k){
- ed.img=await loadImg(draft.imgs[k]);ed.idx=k;ed.shapes=[];ed.cur=null;
+ ed.img=await loadImg(draft.imgs[k]);ed.idx=k;ed.shapes=[];ed.cur=null;ed.sel=null;ed.drag=null;
  cv.width=ed.img.width;cv.height=ed.img.height;draw();$('#edm').classList.add('show');
 }
 const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
 cv.onpointerdown=e=>{
  const p=pt(e);
- if(ed.tool==='text'){const s=prompt('Nhập chữ:');if(s){ed.shapes.push({t:'text',x:p[0],y:p[1],s,c:$('#col').value});draw()}return}
+ if(ed.tool==='sel'){const h=hit(p);ed.sel=h;ed.drag=h?{p,o:JSON.parse(JSON.stringify(h))}:null;if(h)cv.setPointerCapture(e.pointerId);draw();return}
+ if(ed.tool==='text'){askText(e,p);return}
  cv.setPointerCapture(e.pointerId);const c=$('#col').value;
  ed.cur=ed.tool==='pen'?{t:'pen',p:[p],c}:{t:ed.tool,x:p[0],y:p[1],x2:p[0],y2:p[1],c};
 };
-cv.onpointermove=e=>{if(!ed.cur)return;const p=pt(e);if(ed.cur.t==='pen')ed.cur.p.push(p);else{ed.cur.x2=p[0];ed.cur.y2=p[1]}draw()};
-cv.onpointerup=()=>{if(ed.cur){ed.shapes.push(ed.cur);ed.cur=null;draw()}};
-$('#tl').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;ed.tool=b.dataset.k;document.querySelectorAll('#tl [data-k]').forEach(x=>x.classList.toggle('on',x===b))});
-$('#undo').onclick=()=>{ed.shapes.pop();draw()};
-$('#clr').onclick=()=>{ed.shapes=[];draw()};
+cv.onpointermove=e=>{if(ed.drag&&ed.sel){const q=pt(e);mv(ed.sel,ed.drag.o,q[0]-ed.drag.p[0],q[1]-ed.drag.p[1]);draw();return}if(!ed.cur)return;const p=pt(e);if(ed.cur.t==='pen')ed.cur.p.push(p);else{ed.cur.x2=p[0];ed.cur.y2=p[1]}draw()};
+cv.onpointerup=()=>{ed.drag=null;if(ed.cur){const s=ed.cur;ed.cur=null;if(s.t!=='pen'&&Math.hypot(s.x2-s.x,s.y2-s.y)<4){draw();return}ed.shapes.push(s);setTool('sel');ed.sel=s;draw()}};
+$('#tl').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;setTool(b.dataset.k);if(b.dataset.k!=='sel'){ed.sel=null;draw()}});
+$('#col').oninput=()=>{if(ed.sel){ed.sel.c=$('#col').value;draw()}};
+$('#del1').onclick=()=>{ed.shapes=ed.shapes.filter(s=>s!==ed.sel);ed.sel=null;draw()};
+document.addEventListener('keydown',e=>{if(!$('#edm').classList.contains('show')||!ed.sel||e.target.tagName==='INPUT')return;if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();ed.shapes=ed.shapes.filter(s=>s!==ed.sel);ed.sel=null;draw()}});
+$('#undo').onclick=()=>{ed.shapes.pop();ed.sel=null;draw()};
+$('#clr').onclick=()=>{ed.shapes=[];ed.sel=null;draw()};
 $('#edx').onclick=()=>$('#edm').classList.remove('show');
-$('#edok').onclick=()=>{draw();draft.imgs[ed.idx]=cv.toDataURL('image/jpeg',.82);$('#edm').classList.remove('show');thumbs()};
+$('#edok').onclick=()=>{ed.sel=null;draw();draft.imgs[ed.idx]=cv.toDataURL('image/jpeg',.82);$('#edm').classList.remove('show');thumbs()};
+
+/* todo */
+let tEdit=null;
+function vTodo(){
+ const t=today(),all=S.todos||[],td=[...all.filter(x=>x.date===t)].sort((a,b)=>a.done-b.done||a.id-b.id),old=all.filter(x=>x.date<t&&!x.done);
+ const dn=td.filter(x=>x.done).length,pc=td.length?Math.round(dn/td.length*100):0;
+ return `<div class="card"><div class="row" style="align-items:center"><b>Việc hôm nay (${t})</b><span class="cap">${dn}/${td.length} xong</span></div>
+ <div style="height:8px;background:var(--bd);border-radius:99px;margin:8px 0 12px;overflow:hidden"><div style="height:100%;width:${pc}%;background:var(--win)"></div></div>
+ <div style="display:flex;gap:8px"><input id="tin" placeholder="Thêm việc cần làm rồi nhấn Enter…" aria-label="Thêm việc"><button class="btn pri" data-a="tadd">Thêm</button></div></div>
+ ${old.length?`<div class="card row" style="align-items:center"><span>Còn ${old.length} việc chưa xong từ các ngày trước.</span><button class="btn sm" data-a="tcarry">Chuyển sang hôm nay</button></div>`:''}
+ <div class="card">${td.length?td.map(x=>x.id===tEdit?`<div class="todo"><input id="tev" value="${esc(x.text)}" aria-label="Sửa việc"><button class="btn sm pri" data-a="tsave" data-id="${x.id}">Lưu</button><button class="btn sm" data-a="tcancel">Hủy</button></div>`:`<div class="todo ${x.done?'dn':''}"><input type="checkbox" data-a="ttog" data-id="${x.id}" ${x.done?'checked':''} aria-label="Hoàn thành"><span class="tx">${esc(x.text)}</span><button class="btn sm" data-a="tedit" data-id="${x.id}">Sửa</button><button class="btn sm" data-a="tdel" data-id="${x.id}">Xóa</button></div>`).join(''):'<div class="empty">Hôm nay chưa có việc nào. Hãy thêm việc đầu tiên ở ô phía trên.</div>'}</div>
+ ${dn?'<button class="btn sm" data-a="tclr">Xóa các việc đã xong</button>':''}`;
+}
+function todoAct(a,id){
+ const L=S.todos=S.todos||[],t=today(),x=L.find(z=>z.id===id);
+ if(a==='tadd'){const i=$('#tin'),v=i.value.trim();if(!v){i.focus();return}L.push({id:Date.now(),text:v,done:false,date:t})}
+ else if(a==='ttog'&&x)x.done=!x.done;
+ else if(a==='tdel'&&x)S.todos=L.filter(z=>z!==x);
+ else if(a==='tedit')tEdit=id;
+ else if(a==='tcancel')tEdit=null;
+ else if(a==='tsave'&&x){const v=$('#tev').value.trim();if(v)x.text=v;tEdit=null}
+ else if(a==='tcarry')L.forEach(z=>{if(z.date<t&&!z.done)z.date=t});
+ else if(a==='tclr')S.todos=L.filter(z=>!(z.date===t&&z.done));
+ save();render();
+ if(tEdit){const e=$('#tev');if(e){e.focus();e.select()}}else if(a==='tadd'){const n=$('#tin');if(n)n.focus()}
+}
+document.addEventListener('keydown',e=>{const i=e.target;if(i.id==='tin'&&e.key==='Enter')todoAct('tadd');else if(i.id==='tev'){if(e.key==='Enter')todoAct('tsave',tEdit);if(e.key==='Escape')todoAct('tcancel')}});
 
 /* events */
 $('#tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(b){tab=b.dataset.t;render()}};
@@ -268,6 +327,7 @@ $('#add').onclick=()=>openForm();
 $('#unit').oninput=e=>{S.unit=e.target.value;save();render()};
 $('#app').onclick=e=>{
  const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,id=+t.dataset.id,it=S.items.find(x=>x.id===id);
+ if(a[0]==='t'){todoAct(a,id);return}
  if(a==='edit')openForm(it);
  else if(a==='del'){if(confirm('Xóa lệnh này?')){S.items=S.items.filter(x=>x.id!==id);save();render()}}
  else if(a==='zoom'){$('#lbi').src=it.imgs[+t.dataset.k];$('#lb').classList.add('show')}
